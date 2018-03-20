@@ -1,0 +1,5 @@
+<Bindings>
+  <Binding name="PingMe" description="Ping my location" header="PingoMatic">
+    PingoMatic:PingMe("keybind")
+  </Binding>
+</Bindings>
