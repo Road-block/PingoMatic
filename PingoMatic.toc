@@ -1,11 +1,11 @@
 ## Interface: 11200
-## Version: 0.9
+## Version: 1.0
 ## Title: PingoMatic
 ## Notes: Minimap Ping Improvements
 ## Author: Roadblock
 ## X-Website: https://github.com/Road-block/PingoMatic
 ## X-Category: Map
-## OptionalDeps: Ace2, FuBar, FuBarPlugin-2.0, TabletLib, DewdropLib, CompostLib, RosterLib, Babble-Spell-2.2
+## OptionalDeps: Ace2, FuBar, FuBarPlugin-2.0, TabletLib, DewdropLib, CompostLib, GratuityLib, RosterLib, Babble-Spell-2.2
 ## SavedVariables: PingoMaticDB
 
 # Libs Core
@@ -21,6 +21,8 @@ Libs\AceLocale-2.2\AceLocale-2.2.lua
 # Libs Extra
 Libs\Babble-Spell-2.2\Babble-Spell-2.2.lua
 Libs\Compost-2.0\Compost-2.0.lua
+Libs\Deformat-2.0\Deformat-2.0.lua
+Libs\Gratuity-2.0\Gratuity-2.0.lua
 Libs\RosterLib-2.0\RosterLib-2.0.lua
 Libs\Dewdrop-2.0\Dewdrop-2.0.lua
 Libs\Tablet-2.0\Tablet-2.0.lua

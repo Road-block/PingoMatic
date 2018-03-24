@@ -1,8 +1,9 @@
 PingoMatic = AceLibrary("AceAddon-2.0"):new("AceConsole-2.0", "AceDB-2.0", "AceEvent-2.0", "AceHook-2.1", "FuBarPlugin-2.0")
 local T = AceLibrary("Tablet-2.0")
-local L = AceLibrary("AceLocale-2.2"):new("PingoMatic")
 local BS = AceLibrary("Babble-Spell-2.2")
-local roster = AceLibrary("RosterLib-2.0")
+local RL = AceLibrary("RosterLib-2.0")
+local gratuity = AceLibrary("Gratuity-2.0")
+local L = AceLibrary("AceLocale-2.2"):new("PingoMatic")
 
 local defaults = {
   Pinger = true,
@@ -374,6 +375,36 @@ function PingoMatic:SaveMinimapPlayerModel(...)
   end
 end
 
+function PingoMatic:GuildCheck(name)
+  for i=1,GetNumGuildMembers(1) do
+    local g_name, g_rank, g_rankIndex, g_level, g_class, g_zone, g_note, g_officernote, g_online = GetGuildRosterInfo(i)
+    if (string.lower(name) == string.lower(g_name)) then
+      return g_name, g_class, g_rank, g_officernote
+    end
+  end
+  return  
+end
+
+function PingoMatic:GroupCheck(name)
+  local roster = RL and RL.roster or {}
+  for i,unit in pairs(roster) do
+    if unit[name] and not unit[name].class == "PET" then
+      return unit[name].name, unit[name].unitid, unit[name].class, unit[name].rank, unit[name].subgroup
+    end
+  end
+end
+
+function PingoMatic:DebuffCheck(debuff)
+  for i = 0, 15 do
+    local debuffid = GetPlayerBuff(i,"HARMFUL")
+    if debuffid and debuffid ~= -1 then
+      gratuity:SetPlayerBuff(debuffid)
+      local name = gratuity:GetLine(1)
+      if name == debuff then return true end
+    end
+  end
+end
+
 PingoMatic._hexColorCache = {}
 function PingoMatic:RGBtoHEX(colortab,r,g,b)
   if (colortab) then
@@ -409,6 +440,36 @@ do
   CUSTOM_CLASS_COLORS["UNKNOWN"] = {r = 0.6, g = 0.6, b = 0.6, hex = "|cff999999"}
 end
 
+PingoMatic._classTextures = {}
+do
+  PingoMatic._classTextures.texture = [[Interface\Glues\CharacterCreate\UI-CharacterCreate-Classes]]
+  PingoMatic._classTextures.size = 256
+  PingoMatic._classTextures.cols = 4
+  PingoMatic._classTextures.rows = 4
+  PingoMatic._classTextures.icon = 64
+  PingoMatic._classTextures.indexes = {
+    ["WARRIOR"]=1,
+    ["MAGE"]=2,
+    ["ROGUE"]=3,
+    ["DRUID"]=4,
+    ["HUNTER"]=5,
+    ["SHAMAN"]=6,
+    ["PRIEST"]=7,
+    ["WARLOCK"]=8,
+    ["PALADIN"]=9
+  }
+  local increment = PingoMatic._classTextures.icon / PingoMatic._classTextures.size
+  for class,index in pairs(PingoMatic._classTextures.indexes) do
+    local index = index-1
+    local left, right, top, bottom
+    left = math.mod(index , PingoMatic._classTextures.cols) * increment
+    right = left + increment
+    top = math.floor(index / PingoMatic._classTextures.rows) * increment
+    bottom = top + increment
+    PingoMatic._classTextures[class] = {left,right,top,bottom}
+  end
+end
+
 function PingoMatic:CreateMinimapMessage()
   self._frames = self._frames or {}
   if not self._frames.Minimessage then
@@ -441,10 +502,16 @@ function PingoMatic:CreateArrow(arrowType,x,y,alpha)
     self._frames[arrowType].tx:SetHeight(256)
     self._frames[arrowType].tx:SetAllPoints(self._frames[arrowType])
     self._frames[arrowType].txt = self._frames[arrowType]:CreateFontString(nil,"ARTWORK","GameFontNormal")
-    self._frames[arrowType].txt:SetWidth(256)
+    self._frames[arrowType].txt:SetWidth(160)
     self._frames[arrowType].txt:SetHeight(32)
-    self._frames[arrowType].txt:SetPoint("BOTTOM",self._frames[arrowType],"TOP",0,0)
-    self._frames[arrowType].txt:SetJustifyH("CENTER")
+    self._frames[arrowType].txt:SetPoint("BOTTOMRIGHT",self._frames[arrowType],"TOPRIGHT",0,0)
+    self._frames[arrowType].txt:SetJustifyH("LEFT")
+    self._frames[arrowType].txc = self._frames[arrowType]:CreateTexture(nil,"OVERLAY")
+    self._frames[arrowType].txc:SetTexture(self._classTextures.texture)
+    self._frames[arrowType].txc:SetWidth(32)
+    self._frames[arrowType].txc:SetHeight(32)
+    self._frames[arrowType].txc:SetPoint("RIGHT",self._frames[arrowType].txt,"LEFT",0,0)
+    self._frames[arrowType].txc:SetAlpha(0)
   end
   local color
   if arrowType == "Ping" then
@@ -456,12 +523,12 @@ function PingoMatic:CreateArrow(arrowType,x,y,alpha)
   if not x then x = 0 end
   if not y then y = 0 end
   self._frames[arrowType]:SetPoint("CENTER",UIParent,"CENTER",x,y)
-    if not alpha then alpha = 0 end
+  if not alpha then alpha = 0 end
   self._frames[arrowType]:SetAlpha(alpha)
   self._frames[arrowType]:Show()
 end
 
-function PingoMatic:UpdateArrow(arrowType,height,scale,colortab,ULx,ULy,LLx,LLy,URx,URy,LRx,LRy,x,y,text,alpha,txalpha)
+function PingoMatic:UpdateArrow(arrowType,height,scale,colortab,ULx,ULy,LLx,LLy,URx,URy,LRx,LRy,x,y,text,alpha,txalpha,class)
   if not self._frames and self._frames[arrowType] then
     self:CreateArrow(arrowType)
   end
@@ -489,6 +556,14 @@ function PingoMatic:UpdateArrow(arrowType,height,scale,colortab,ULx,ULy,LLx,LLy,
   end
   if (txalpha) then
     self._frames[arrowType].tx:SetAlpha(txalpha)
+  end
+  if (class) then
+    if self._classTextures[class] then
+      self._frames[arrowType].txc:SetTexCoord(unpack(self._classTextures[class]))
+      self._frames[arrowType].txc:SetAlpha(1)
+    else
+      self._frames[arrowType].txc:SetAlpha(0)
+    end
   end
 end
 
@@ -600,12 +675,31 @@ function PingoMatic:GetHealthStatusOption()
 end
 function PingoMatic:SetHealthStatusOption(newHPpct)
   self.db.profile.Health = newHPpct
+  if newHPpct < 100 then
+    self:RegisterEvent("UNIT_HEALTH")
+  elseif newHPpct == 0 then
+    self:RegisterEvent("PLAYER_DEAD")
+  else
+    if self:IsEventRegistered("UNIT_HEALTH") then
+      self:UnregisterEvent("UNIT_HEALTH")
+    end
+    if self:IsEventRegistered("PLAYER_DEAD") then
+      self:UnregisterEvent("PLAYER_DEAD")
+    end
+  end
 end
 function PingoMatic:GetDebuffOption()
   return self.db.profile.Debuff
 end
 function PingoMatic:SetDebuffOption(newStatus)
   self.db.profile.Debuff = newStatus
+  if newStatus then
+    self:RegisterEvent("UNIT_AURA")
+  else
+    if self:IsEventRegistered("UNIT_AURA") then
+      self:UnregisterEvent("UNIT_AURA")
+    end
+  end
 end
 function PingoMatic:AddToDebuffList(debuff)
   if not self:inTable(debuff, self.db.profile.DebuffList) then
@@ -772,6 +866,33 @@ function PingoMatic:OnWorldMouseUp()
   end
 end
 
+function PingoMatic:UNIT_HEALTH()
+  if not UnitIsUnit(arg1,"player") then return end
+  local hpPctOpt = self.db.profile.Health
+  local hpPct = UnitHealth(arg1)*100/UnitHealthMax(arg1)
+  if hpPct < hpPctOpt then
+    self:PingMe("health")
+  end
+end
+
+function PingoMatic:PLAYER_DEAD()
+  local hpPctOpt = self.db.profile.Health
+  if hpPctOpt == 0 then
+    self:PingMe("dead")
+  end
+end
+
+function PingoMatic:UNIT_AURA()
+  if not UnitIsUnit(arg1,"player") then return end
+  if next(self.db.profile.DebuffList) then
+    for i,debuff in ipairs(self.db.profile.DebuffList) do
+      if self:DebuffCheck(debuff) then
+        self:PingMe("debuff")
+      end
+    end
+  end
+end
+
 function PingoMatic:MINIMAP_PING()
   if not self._minimapPlayerModel then return end
   local unitName = UnitName(arg1)
@@ -779,6 +900,11 @@ function PingoMatic:MINIMAP_PING()
   local leader = UnitIsPartyLeader(arg1)
   if self.db.profile.Filter == "leader" and not leader then return end
   if self.db.profile.Filter == "whitelist" and not self:inTable(unitName, self.db.profile.Whitelist) then return end
+  if self.db.profile.Filter == "assist" and not leader then
+    local _, _, _, rank = self:GroupCheck(unitName)
+    if (not rank) or (rank < 1) then return end
+  end
+  if self.db.profile.Filter == "guild" and not self:GuildCheck(unitName) then return end
   if self.db.profile.Pinger then
     local _, eClass = UnitClass(arg1)
     local msg
@@ -789,10 +915,10 @@ function PingoMatic:MINIMAP_PING()
       msg = msg and string.format("%s\n%s",msg,CUSTOM_CLASS_COLORS[eClass].hex) or CUSTOM_CLASS_COLORS[eClass].hex
     end
     msg = string.format("%s%s|r",msg,unitName)
-    self._frames.Ping.txt:SetText(msg)
+    self:UpdateArrow("Ping",nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,msg,nil,nil,eClass or nil)
     self._frames.Minimessage:AddMessage(msg)
   else
-    self._frames.Ping.txt:SetText("")
+    self:UpdateArrow("Ping",nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,"",nil,nil,"_")
   end
   self._coordsystem = "ping"
   UIFrameFadeOut(self._frames.Ping, self.db.profile.Fade, 1, 0)
@@ -816,11 +942,40 @@ function PingoMatic:PLAYER_ENTERING_WORLD()
   if not self:IsHooked(WorldFrame,"OnMouseUp") then
     self:HookScript(WorldFrame,"OnMouseUp", "OnWorldMouseUp")
   end
+  if self.db.profile.Health < 100 then
+    self:RegisterEvent("UNIT_HEALTH")
+    if self.db.profile.Health == 0 then
+      self:RegisterEvent("PLAYER_DEAD")
+    end
+  end
+  if self.db.profile.Debuff then
+    self:RegisterEvent("UNIT_AURA")
+  end
 end
 
+local throttle = {dead={last=0,count=0},health={last=0,count=0},debuff={last=0,count=0}}
 function PingoMatic:PingMe(reason)
   if not self._minimapPlayerModel then return end
+  if not reason then reason = "manual" end
+  local now = GetTime()
+  local rate = self.db.profile.Rate
+  local count = self.db.profile.Repeat
   local x,y = self._minimapPlayerModel:GetPosition()
   x,y = -500*x, -500*y
+  if throttle[reason] then
+    if now - rate >= throttle[reason].last then
+      if now - 2*rate >= throttle[reason].last then
+        throttle[reason].count = 0
+      end
+      throttle[reason].count = throttle[reason].count + 1
+      if throttle[reason].count > count then
+        return
+      else
+        throttle[reason].last = now
+      end
+    else
+      return
+    end
+  end
   Minimap:PingLocation(x,y)
 end
