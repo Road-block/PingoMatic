@@ -17,8 +17,10 @@ local defaults = {
   Width = 256,
   Health = 100,
   Debuff = false,
+  Periodic = false,
   Rate = 3,
   Repeat = 3,
+  Texture = [[Interface\AddOns\PingoMatic\img\Arrow.tga]],
   Color = {r = 1.00, g = 0.00, b = 0.00},
   GPSColor = {r = 0.25, g = 0.25, b = 1.00},
   GPSFlash = {r = 0.00, g = 1.00, b = 0.00},
@@ -75,6 +77,16 @@ local options  = {
       desc = L["Arrow Options"],
       order = 20,
       args = {
+        Texture = {
+          name = L["Texture"],
+          desc = L["Arrow Texture"],
+          type = "text",
+          get  = "GetTextureOption",
+          set  = "SetTextureOption",
+          usage = "<texture>",
+          order = 21,
+          validate = {["Interface\\AddOns\\PingoMatic\\img\\Arrow.tga"]="Arrow", ["Interface\\AddOns\\PingoMatic\\img\\Arrow-flow.tga"]="Arrow-Flow", ["Interface\\AddOns\\PingoMatic\\img\\Arrow-bevel.tga"]="Arrow-Bevel"},
+        },
         Fps = {
           name = L["FPS"],
           desc = L["Arrow Refresh Rate"],
@@ -84,7 +96,7 @@ local options  = {
           min  = 8,
           max  = 64,
           step = 8,
-          order = 21,
+          order = 22,
         },
         Fade = {
           name = L["Fade"],
@@ -95,7 +107,7 @@ local options  = {
           min  = 1,
           max  = 10,
           step = 1,
-          order = 22,
+          order = 23,
         },
         Ratio = {
           name = L["Ratio"],
@@ -106,7 +118,7 @@ local options  = {
           min  = 0.1,
           max  = 1.0,
           step = 0.1,
-          order = 23,
+          order = 24,
         },
         Scale = {
           name = L["Scale"],
@@ -117,7 +129,7 @@ local options  = {
           min  = 0.2,
           max  = 2,
           step = 0.1,
-          order = 24,
+          order = 25,
         },
         Alpha = {
           name = L["Alpha"],
@@ -128,7 +140,7 @@ local options  = {
           min  = 0.1,
           max  = 1.0,
           step = 0.1,
-          order = 25,
+          order = 26,
         },
         Radius = {
           name = L["Radius"],
@@ -139,7 +151,7 @@ local options  = {
           min  = 128,
           max  = 256,
           step = 8,
-          order = 26,
+          order = 27,
         },
         Width = {
           name = L["Width"],
@@ -150,7 +162,7 @@ local options  = {
           min  = 128,
           max  = 256,
           step = 8,
-          order = 27,
+          order = 28,
         },
         Color = {
           name = L["Color"],
@@ -158,7 +170,7 @@ local options  = {
           type = "color",
           get  = "GetArrowColor",
           set  = "SetArrowColor",
-          order = 28,
+          order = 29,
         },
         GPSColor = {
           name = L["GPS Color"],
@@ -166,7 +178,7 @@ local options  = {
           type = "color",
           get  = "GetGPSColor",
           set  = "SetGPSColor",
-          order = 29,
+          order = 30,
         },
         GPSFlash = {
           name = L["GPS Flash Color"],
@@ -174,7 +186,7 @@ local options  = {
           type = "color",
           get  = "GetGPSFlashColor",
           set  = "SetGPSFlashColor",
-          order = 30
+          order = 31
         },
       },
     },    
@@ -246,13 +258,22 @@ local options  = {
           set  = "SetDebuffOption",
           order = 62,
         },
+        Periodic = {
+          name = L["Periodic"],
+          desc = L["Continuous Ping"],
+          type = "toggle",
+          get  = "GetPeriodicOption",
+          set  = "SetPeriodicOption",
+          isradio = true,
+          order = 63,
+        },
         DebuffList = {
           type = "group",
           name = L["DebuffList"],
           desc = L["DebuffList Management"],
           handler = PingoMatic,
           hidden = function() return not PingoMatic.db.profile.Debuff end,
-          order = 63,
+          order = 64,
           args = {
             Add = {
               name = L["Add"],
@@ -261,7 +282,7 @@ local options  = {
               get  = false,
               set = "AddToDebuffList",
               usage = "<name>",
-              order = 64,
+              order = 65,
             },
             Remove = {
               name = L["Remove"],
@@ -271,7 +292,7 @@ local options  = {
               set = "RemoveFromDebuffList",
               usage = "<name>",
               validate = empty,
-              order = 65,
+              order = 66,
             },
           },
         },
@@ -284,7 +305,7 @@ local options  = {
           min  = 1,
           max  = 5,
           step = 1,
-          order = 66,
+          order = 67,
         },
         Repeat = {
           name = L["Repeat"],
@@ -295,7 +316,7 @@ local options  = {
           min  = 1,
           max  = 3,
           step = 1,
-          order = 67,
+          order = 68,
         },
       },
     },
@@ -497,7 +518,7 @@ function PingoMatic:CreateArrow(arrowType,x,y,alpha)
     self._frames[arrowType]:SetWidth(256)
     self._frames[arrowType]:SetHeight(256)
     self._frames[arrowType].tx = self._frames[arrowType]:CreateTexture(nil,"OVERLAY")
-    self._frames[arrowType].tx:SetTexture([[Interface\AddOns\PingoMatic\img\Arrow.tga]])
+    self._frames[arrowType].tx:SetTexture(self.db.profile.Texture)
     self._frames[arrowType].tx:SetWidth(256)
     self._frames[arrowType].tx:SetHeight(256)
     self._frames[arrowType].tx:SetAllPoints(self._frames[arrowType])
@@ -528,9 +549,12 @@ function PingoMatic:CreateArrow(arrowType,x,y,alpha)
   self._frames[arrowType]:Show()
 end
 
-function PingoMatic:UpdateArrow(arrowType,height,scale,colortab,ULx,ULy,LLx,LLy,URx,URy,LRx,LRy,x,y,text,alpha,txalpha,class)
+function PingoMatic:UpdateArrow(arrowType,arrowTex,height,scale,colortab,ULx,ULy,LLx,LLy,URx,URy,LRx,LRy,x,y,text,alpha,txalpha,class)
   if not self._frames and self._frames[arrowType] then
     self:CreateArrow(arrowType)
+  end
+  if (arrowTex) then
+    self._frames[arrowType].tx:SetTexture(arrowTex)
   end
   if (height) then
     self._frames[arrowType]:SetHeight(height)
@@ -727,6 +751,29 @@ function PingoMatic:SetRepeatOption(newRepeat)
   self.db.profile.Repeat = newRepeat
 end
 
+function PingoMatic:GetTextureOption()
+  return self.db.profile.Texture
+end
+function PingoMatic:SetTextureOption(newTexture)
+  self.db.profile.Texture = newTexture
+  self:UpdateArrow("Ping",newTexture)
+  self:UpdateArrow("GPS",newTexture)
+end
+function PingoMatic:GetPeriodicOption()
+  return self.db.profile.Periodic
+end
+function PingoMatic:SetPeriodicOption(newStatus)
+  self.db.profile.Periodic = newStatus
+  if newStatus then
+    self:PingMe("periodic")
+    self:ScheduleRepeatingEvent("PingoMatic_PeriodicPing", function() PingoMatic:PingMe("periodic") end, PingoMatic.db.profile.Rate, self)
+  else
+    if self:IsEventScheduled("PingoMatic_PeriodicPing") then
+      self:CancelScheduledEvent("PingoMatic_PeriodicPing")
+    end
+  end
+end
+
 function PingoMatic:ParseCoords(input)
   input = tostring(input)
   for x,y in string.gfind(input,"(%d+%.?%d*)%s+(%d+%.?%d*)") do
@@ -746,7 +793,7 @@ function PingoMatic:SetCoords(input)
   if x and y then
     self._coord.x = x
     self._coord.y = y
-    self:UpdateArrow("Ping",nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,string.format("%2.1f, %2.1f", x, y))
+    self:UpdateArrow("Ping",nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,string.format("%2.1f, %2.1f", x, y))
     self._coordsystem = "coord"
     UIFrameFadeOut(self._frames.Ping,1,1,0)
   end
@@ -762,7 +809,7 @@ function PingoMatic:SetGPS(input)
   if x and y then
     self._gps.x = x
     self._gps.y = y
-    self:UpdateArrow("GPS",nil,nil,self.db.profile.GPSColor,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,string.format("%2.1f, %2.1f", x, y),1,self.db.profile.Alpha)
+    self:UpdateArrow("GPS",nil,nil,nil,self.db.profile.GPSColor,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,string.format("%2.1f, %2.1f", x, y),1,self.db.profile.Alpha)
   end
 end
 
@@ -824,14 +871,14 @@ function PingoMatic:OnUpdate()
   local sinr = math.sin(r) * 0.7071067811
   local cosr = math.cos(r) * 0.7071067811
 
-  self:UpdateArrow("Ping",self.db.profile.Width * squish,nil,nil,0.5-sinr, 0.5+cosr, 0.5-cosr, 0.5-sinr, 0.5+cosr, 0.5+sinr, 0.5+sinr, 0.5-cosr, -math.sin(bearing) * self.db.profile.Radius, math.cos(bearing) * self.db.profile.Radius * squish)
+  self:UpdateArrow("Ping",nil,self.db.profile.Width * squish,nil,nil,0.5-sinr, 0.5+cosr, 0.5-cosr, 0.5-sinr, 0.5+cosr, 0.5+sinr, 0.5+sinr, 0.5-cosr, -math.sin(bearing) * self.db.profile.Radius, math.cos(bearing) * self.db.profile.Radius * squish)
 
   if (self._gps.x ~= -1) and (self._gps.y ~= -1) then
-    self:UpdateArrow("GPS", self.db.profile.Width * squish)
+    self:UpdateArrow("GPS", nil, self.db.profile.Width * squish)
     lastx, lasty = self:GetCoords("gps")
 
     if (math.abs(lastx) < 0.05) and (math.abs(lasty) < 0.05) then
-      self:UpdateArrow("GPS",nil,nil,self.db.profile.GPSFlash,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil, string.format(">> %2.1f, %2.1f <<", self._gps.x, self._gps.y))
+      self:UpdateArrow("GPS",nil, nil,nil,self.db.profile.GPSFlash,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil, string.format(">> %2.1f, %2.1f <<", self._gps.x, self._gps.y))
       UIFrameFadeOut(self._frames.GPS, 1.0, 1.0, 0.0)
       PlaySound("MapPing")
       self._gps.x = -1
@@ -848,7 +895,7 @@ function PingoMatic:OnUpdate()
     sinr = math.sin(r) * 0.7071067811
     cosr = math.cos(r) * 0.7071067811
 
-    self:UpdateArrow("GPS",nil,nil,nil,0.5-sinr, 0.5+cosr, 0.5-cosr, 0.5-sinr, 0.5+cosr, 0.5+sinr, 0.5+sinr, 0.5-cosr, -math.sin(bearing) * self.db.profile.Radius, math.cos(bearing) * self.db.profile.Radius * squish)
+    self:UpdateArrow("GPS",nil, nil,nil,nil,0.5-sinr, 0.5+cosr, 0.5-cosr, 0.5-sinr, 0.5+cosr, 0.5+sinr, 0.5+sinr, 0.5-cosr, -math.sin(bearing) * self.db.profile.Radius, math.cos(bearing) * self.db.profile.Radius * squish)
   end  
 end
 
@@ -915,10 +962,10 @@ function PingoMatic:MINIMAP_PING()
       msg = msg and string.format("%s\n%s",msg,CUSTOM_CLASS_COLORS[eClass].hex) or CUSTOM_CLASS_COLORS[eClass].hex
     end
     msg = string.format("%s%s|r",msg,unitName)
-    self:UpdateArrow("Ping",nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,msg,nil,nil,eClass or nil)
+    self:UpdateArrow("Ping",nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,msg,nil,nil,eClass or nil)
     self._frames.Minimessage:AddMessage(msg)
   else
-    self:UpdateArrow("Ping",nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,"",nil,nil,"_")
+    self:UpdateArrow("Ping",nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,"",nil,nil,"_")
   end
   self._coordsystem = "ping"
   UIFrameFadeOut(self._frames.Ping, self.db.profile.Fade, 1, 0)
@@ -927,8 +974,8 @@ end
 function PingoMatic:PLAYER_ENTERING_WORLD()
   self:CreateArrow("Ping",nil,nil,0)
   self:CreateArrow("GPS",nil,nil,0)
-  self:UpdateArrow("Ping",self.db.profile.Width * self.db.profile.Ratio, self.db.profile.Scale)
-  self:UpdateArrow("GPS",self.db.profile.Width * self.db.profile.Ratio, self.db.profile.Scale)
+  self:UpdateArrow("Ping", nil, self.db.profile.Width * self.db.profile.Ratio, self.db.profile.Scale)
+  self:UpdateArrow("GPS", nil, self.db.profile.Width * self.db.profile.Ratio, self.db.profile.Scale)
   self:CreateMinimapMessage()
   if not self:IsEventScheduled("PingoMatic_Update") then
     self:UpdateTimer(tonumber(self.db.profile.Fps))

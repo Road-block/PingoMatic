@@ -1,5 +1,5 @@
 ## Interface: 11200
-## Version: 1.0
+## Version: 1.1
 ## Title: PingoMatic
 ## Notes: Minimap Ping Improvements
 ## Author: Roadblock

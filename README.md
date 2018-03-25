@@ -6,7 +6,7 @@ PingoMatic Features:
 - Adds a minimap overlay showing the name of the pinger.
 - Adds an onsreen Arrow pointing towards the direction of the ping.
 - Optional ping filter. *Only show extra info / arrow if filter passes*
-- Optional self auto-pinger. *Ping location if player is low hp or has a special debuff*
+- Optional self auto-pinger. *Ping location if player is low hp, has a special debuff or on a timer*
 - Keybind to self-ping. *left clicking the PingoMatic icon will also self-ping*
 - Option to set a session persistent GPS arrow (x.xx y.yy)  
   GPS arrow will disappear when you reach your destination or by entering `Delete` (localized) as coordinates.
