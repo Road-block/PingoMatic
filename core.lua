@@ -20,7 +20,7 @@ local defaults = {
   Periodic = false,
   Rate = 3,
   Repeat = 3,
-  Texture = [[Interface\AddOns\PingoMatic\img\Arrow.tga]],
+  Texture = [[Interface\AddOns\PingoMatic\img\Arrow-bevel.tga]],
   Color = {r = 1.00, g = 0.00, b = 0.00},
   GPSColor = {r = 0.25, g = 0.25, b = 1.00},
   GPSFlash = {r = 0.00, g = 1.00, b = 0.00},
@@ -258,22 +258,13 @@ local options  = {
           set  = "SetDebuffOption",
           order = 62,
         },
-        Periodic = {
-          name = L["Periodic"],
-          desc = L["Continuous Ping"],
-          type = "toggle",
-          get  = "GetPeriodicOption",
-          set  = "SetPeriodicOption",
-          isradio = true,
-          order = 63,
-        },
         DebuffList = {
           type = "group",
           name = L["DebuffList"],
           desc = L["DebuffList Management"],
           handler = PingoMatic,
           hidden = function() return not PingoMatic.db.profile.Debuff end,
-          order = 64,
+          order = 63,
           args = {
             Add = {
               name = L["Add"],
@@ -295,6 +286,15 @@ local options  = {
               order = 66,
             },
           },
+        },        
+        Periodic = {
+          name = L["Periodic"],
+          desc = L["Continuous Ping"],
+          type = "toggle",
+          get  = "GetPeriodicOption",
+          set  = "SetPeriodicOption",
+          isradio = true,
+          order = 64,
         },
         Rate = {
           name = L["Rate"],
@@ -781,14 +781,20 @@ function PingoMatic:ParseCoords(input)
   end
 end
 
-function PingoMatic:VerifyCoord(input)
+function PingoMatic:VerifyCoord(input,cmdline)
+  if (cmdline) then
+    input = string.format("%s %s",input,cmdline)
+  end
   if input == DELETE then return true end
   local x, y = self:ParseCoords(input)
   if x and y and (x>=0 and x<=100) and (y>=0 and y<=100) then return true end
   self:Print(L["Invalid Coord Input. Use: x[.xx] y[.yy]"])
 end
 
-function PingoMatic:SetCoords(input)
+function PingoMatic:SetCoords(input,cmdline)
+  if (cmdline) then
+    input = string.format("%s %s",input,cmdline)
+  end
   local x, y = self:ParseCoords(input)
   if x and y then
     self._coord.x = x
@@ -798,7 +804,10 @@ function PingoMatic:SetCoords(input)
     UIFrameFadeOut(self._frames.Ping,1,1,0)
   end
 end
-function PingoMatic:SetGPS(input)
+function PingoMatic:SetGPS(input,cmdline)
+  if (cmdline) then
+    input = string.format("%s %s",input,cmdline)
+  end  
   if input == DELETE then
     self._gps.x = -1
     self._gps.y = -1
