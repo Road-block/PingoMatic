@@ -1,6 +1,7 @@
 ## Interface: 11200
-## Version: 1.11
+## Version: 1.12
 ## Title: PingoMatic
+## Title-zhCN: PingoMatic 小地图Ping强化
 ## Notes: Minimap Ping Improvements
 ## Author: Roadblock
 ## X-Website: https://github.com/Road-block/PingoMatic
