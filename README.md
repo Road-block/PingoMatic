@@ -1,5 +1,6 @@
 # PingoMatic
 Minimap ping on steroids for vanilla WoW (1.12)
+![pingomatic world arrow](https://user-images.githubusercontent.com/109839/38913706-dd0b48c2-42e4-11e8-9ffd-9efa17db6b92.png)
 
 ## Description
 PingoMatic Features: 
