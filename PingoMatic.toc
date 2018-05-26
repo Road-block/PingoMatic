@@ -1,5 +1,5 @@
 ## Interface: 11200
-## Version: 1.12
+## Version: 1.12.1
 ## Title: PingoMatic
 ## Title-zhCN: PingoMatic 小地图Ping强化
 ## Notes: Minimap Ping Improvements

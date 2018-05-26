@@ -1035,3 +1035,5 @@ function PingoMatic:PingMe(reason)
   end
   Minimap:PingLocation(x,y)
 end
+
+BINDING_HEADER_PINGOMATIC = L["PingoMatic"]
